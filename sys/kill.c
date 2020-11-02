@@ -8,6 +8,7 @@
 #include <io.h>
 #include <q.h>
 #include <stdio.h>
+#include <lock.h>
 
 /*------------------------------------------------------------------------
  * kill  --  kill a process and remove it from the system
@@ -40,6 +41,53 @@ SYSCALL kill(int pid)
 	send(pptr->pnxtkin, pid);
 
 	freestk(pptr->pbase, pptr->pstklen);
+
+	// the process is waiting in a lock
+	if (pptr->plock != -1) {
+		lock_t *lptr = &locktab[pptr->plock];
+		// remove current process from the wait queue
+		qnode_t *qptr = lptr->qhead->next;
+		while (qptr != lptr->qtail) {
+			if (qptr->pid == pid) {
+				break;
+			}
+			qptr = qptr->next;
+		}
+
+		qptr->prev->next = qptr->next;
+		qptr->next->prev = qptr->prev;
+
+		freemem(qptr, sizeof(qnode_t));
+
+		// ramp up the priority
+		augment_priority(pptr->plock);
+	}
+
+
+	// the process is holding some locks
+	if (pptr->pllhead->next != pptr->plltail) {
+		llistnode_t *llptr = pptr->pllhead->next;
+		while (llptr != pptr->plltail) {
+			int lock = llptr->lock;
+			llptr = llptr->next;
+			release(lock, pid);
+			// // remove current process from the proc list of the lock
+			// lock_t *lptr = &locktab[llptr->lock];
+			// plistnode_t *plptr = lptr->plhead->next;
+			// while (plptr != lptr->pltail) {
+			// 	if (plptr->pid = pid) break;
+			// 	plptr = plptr->next;
+			// }
+			// plptr->prev->next = plptr->next;
+			// plptr->next->prev = plptr->prev;
+			// freemem(plptr, sizeof(plistnode_t));
+
+			// llistnode_t *todelete = llptr;
+			// llptr = llptr->next;
+			// freemem(todelete, sizeof(llistnode_t));
+		}
+	}
+
 	switch (pptr->pstate) {
 
 	case PRCURR:	pptr->pstate = PRFREE;	/* suicide */

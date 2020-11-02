@@ -67,6 +67,25 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	pptr->pnxtkin = BADPID;
 	pptr->pdevs[0] = pptr->pdevs[1] = pptr->ppagedev = BADDEV;
 
+	// initialize fields related to lock
+	pptr->plockret = OK;
+	pptr->plock = -1;
+	pptr->pinh = 0;
+	int j;
+	for (j = 0; j < NLOCKS; ++j) {
+		pptr->plockcallback[i] = 0;
+	}
+	pptr->pllhead = getmem(sizeof(llistnode_t));
+	pptr->plltail = getmem(sizeof(llistnode_t));
+
+	pptr->pllhead->lock = -1;
+	pptr->pllhead->prev = NULL;
+	pptr->pllhead->next = pptr->plltail;
+
+	pptr->plltail->lock = -1;
+	pptr->plltail->prev = pptr->pllhead;
+	pptr->plltail->next = NULL;
+
 		/* Bottom of stack */
 	*saddr = MAGIC;
 	savsp = (unsigned long)saddr;

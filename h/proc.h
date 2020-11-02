@@ -38,6 +38,8 @@
 
 #define	isbadpid(x)	(x<=0 || x>=NPROC)
 
+#include <lock.h>
+
 /* process table entry */
 
 struct	pentry	{
@@ -60,6 +62,14 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;		/* pageing dgram device		*/
 	int	pwaitret;
+
+	// fields related to lock
+	int plockret;					// return value cached for calling lock()
+	int plock;						// lock id the process is waiting for
+	int pinh;						// inherited priority
+	int plockcallback[NLOCKS];		// callback for lock deletion
+	llistnode_t *pllhead;			// head of the lock list held by the process
+	llistnode_t *plltail;			// tail of the lock list held by the process
 };
 
 

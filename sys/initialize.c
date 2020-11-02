@@ -13,6 +13,7 @@
 #include <q.h>
 #include <io.h>
 #include <stdio.h>
+#include <lock.h>
 
 /*#define DETAIL */
 #define HOLESIZE	(600)	
@@ -170,6 +171,28 @@ LOCAL int sysinit()
 	pptr->paddr = (WORD) nulluser;
 	pptr->pargs = 0;
 	pptr->pprio = 0;
+
+	// initialize the fields of NULLPROC
+	pptr->plockret = OK;
+	pptr->plock = -1;
+	pptr->pinh = 0;
+	for (j = 0; j < NLOCKS; ++j) {
+		pptr->plockcallback[i] = 0;
+	}
+	pptr->pllhead = getmem(sizeof(llistnode_t));
+	pptr->plltail = getmem(sizeof(llistnode_t));
+
+	pptr->pllhead->lock = -1;
+	pptr->pllhead->prev = NULL;
+	pptr->pllhead->next = pptr->plltail;
+
+	pptr->plltail->lock = -1;
+	pptr->plltail->prev = pptr->pllhead;
+	pptr->plltail->next = NULL;
+
+	// call linit
+	linit();
+
 	currpid = NULLPROC;
 
 	for (i=0 ; i<NSEM ; i++) {	/* initialize semaphores */
