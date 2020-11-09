@@ -1,0 +1,31 @@
+Question 1:
+1. Answer:
+We can use priority ceiling protocol to avoid the problem of priority inversion. With this protocol, the shared mutex process (that runs the operating system code) has a characteristic (high) priority
+of its own, which is assigned to the task locking the mutex. This works well, provided the other high priority tasks that tries to access the mutex does not have a priority higher than the ceiling priority.
+
+2. Answer:
+result of using locks:
+        start A (priority: 20), then sleep 1s
+                A: to acquire lock
+                A: acquired lock, enter infinite loop
+        current priority of A: 20
+        start B (priority: 30), then sleep 1s
+                B: to acquire lock
+        current priority of A: 30
+
+result of using semaphores:
+        start A (priority: 20), then sleep 1s
+                A: to acquire semaphore
+                A: acquired semaphore, enter infinite loop
+        current priority of A: 20
+        start B (priority: 30), then sleep 1s
+                B: to acquire semaphore
+        current priority of A: 20
+
+Question 2:
+The potential issue int the pesudo code is that, as the function try_upate uses a semaphore that is initialized to 10, it is likely that more that 1 thread can execute the function buffer_add(). As a result,
+the data written by thread 1 could be overwritten by thread 2 and thus the previous data could be lost.
+
+A possbile scenario that the mentioned problem can occur is, thread 1 sucessfully acquires the semaphore and then enters the function buffer_add(). Right after thread 1 calls the function memcpy and its data
+is written into the buffer, the context switch happens. Then thread 2 successfully acquires the semaphore and enters the function buffer_add. This time, thread 2 writes its data into the buffer. However,
+because the buf->len has not been updated by thread 1, data of thread 2 will overwrite data of thread 1. Thus, data of thread 1 will be lost.
